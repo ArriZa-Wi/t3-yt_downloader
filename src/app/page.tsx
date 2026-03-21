@@ -1,10 +1,12 @@
-import { Navbar } from "./_components/Navbar";
-import { DownloaderWidget } from "./_components/DownloaderWidget";
+import { Navbar }            from "./_components/Navbar";
+import { DownloaderWidget }  from "./_components/DownloaderWidget";
+import { FloatingParticles } from "./_components/FloatingParticles";
+import { BelowCardContent }  from "./_components/BelowCardContent";
 
 export default function HomePage() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
-      {/* Animated red glow background */}
+      {/* Animated red radial glow */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-0"
@@ -16,9 +18,12 @@ export default function HomePage() {
           animation: "bg-pulse 8s ease-in-out infinite",
         }}
       />
+      {/* Floating particles */}
+      <FloatingParticles />
       <Navbar />
-      <main className="relative z-10 flex flex-1 items-start justify-center px-4 pt-16">
+      <main className="relative z-10 flex flex-1 flex-col items-center gap-16 px-4 pb-24 pt-16">
         <DownloaderWidget />
+        <BelowCardContent />
       </main>
     </div>
   );
