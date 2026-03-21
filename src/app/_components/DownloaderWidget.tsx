@@ -127,8 +127,14 @@ export function DownloaderWidget() {
           <FormatPicker
             format={format}
             quality={quality}
-            onFormatChange={setFormat}
-            onQualityChange={setQuality}
+            onFormatChange={(f) => {
+              setFormat(f);
+              if (phase === "done") { setPhase("info_ready"); setJobId(null); }
+            }}
+            onQualityChange={(q) => {
+              setQuality(q);
+              if (phase === "done") { setPhase("info_ready"); setJobId(null); }
+            }}
           />
         )}
 

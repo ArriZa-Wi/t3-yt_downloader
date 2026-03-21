@@ -85,6 +85,14 @@ export function spawnYtDlpDownload(
       if (destMatch?.[1]) {
         outputPath = destMatch[1].trim();
       }
+
+      // For merged MP4 (bestvideo+bestaudio), yt-dlp prints:
+      // [Merger] Merging formats into "/path/to/file.mp4"
+      // This overrides intermediate stream paths captured above
+      const mergerMatch = /Merging formats into "(.+)"/.exec(line.trim());
+      if (mergerMatch?.[1]) {
+        outputPath = mergerMatch[1].trim();
+      }
     }
   });
 
