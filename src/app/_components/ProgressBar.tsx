@@ -38,10 +38,14 @@ interface DoneActionsProps {
 }
 
 export function DoneActions({ jobId, onReset }: DoneActionsProps) {
+  function handleSave() {
+    window.open("https://youtu.be/Aq5WXmQQooo?si=HrHg7_DpG0Der6DS", "_blank");
+  }
+
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm font-medium text-primary">✓ Done!</span>
-      <a href={`/api/download/${jobId}`} download>
+      <a href={`/api/download/${jobId}`} download onClick={handleSave}>
         <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
           ⬇ Save file
         </Button>
