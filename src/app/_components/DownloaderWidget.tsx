@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -62,22 +62,25 @@ export function DownloaderWidget() {
     { jobId: jobId ?? "" },
     {
       enabled: phase === "downloading" && !!jobId,
-      refetchInterval: 1000,
+      refetchInterval: 2500,
+      staleTime: 0,
     },
   );
 
-  // React to job status changes
   const status = jobStatus.data?.status;
   const progress = jobStatus.data?.progress ?? 0;
 
-  if (phase === "downloading" && status === "done") {
-    setPhase("done");
-    void utils.downloader.getJobStatus.invalidate();
-  }
-  if (phase === "downloading" && status === "error") {
-    setErrorMsg(jobStatus.data?.errorMessage ?? "Download failed");
-    setPhase("error");
-  }
+  useEffect(() => {
+    if (phase === "downloading" && status === "done") {
+      setPhase("done");
+      void utils.downloader.getJobStatus.invalidate();
+    }
+    if (phase === "downloading" && status === "error") {
+      setErrorMsg(jobStatus.data?.errorMessage ?? "Download failed");
+      setPhase("error");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   function handleFetch(fetchUrl: string) {
     setUrl(fetchUrl);

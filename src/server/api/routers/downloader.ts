@@ -5,7 +5,21 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { execYtDlpInfo, spawnYtDlpDownload } from "~/lib/yt-dlp";
+import { execYtDlpInfo, spawnYtDlpDownload, type VideoInfo } from "~/lib/yt-dlp";
+
+interface CacheEntry { data: VideoInfo; cachedAt: number; }
+const VIDEO_INFO_CACHE = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function getCachedVideoInfo(url: string): VideoInfo | null {
+  const entry = VIDEO_INFO_CACHE.get(url);
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > CACHE_TTL_MS) {
+    VIDEO_INFO_CACHE.delete(url);
+    return null;
+  }
+  return entry.data;
+}
 
 const youtubeUrlSchema = z
   .string()
@@ -21,7 +35,11 @@ export const downloaderRouter = createTRPCRouter({
     .input(z.object({ url: youtubeUrlSchema }))
     .mutation(async ({ input }) => {
       try {
-        return await execYtDlpInfo(input.url);
+        const cached = getCachedVideoInfo(input.url);
+        if (cached) return cached;
+        const result = await execYtDlpInfo(input.url);
+        VIDEO_INFO_CACHE.set(input.url, { data: result, cachedAt: Date.now() });
+        return result;
       } catch (err) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -68,6 +86,11 @@ export const downloaderRouter = createTRPCRouter({
         data: { status: "downloading" },
       });
 
+      let lastWrittenProgress = -1;
+      let lastWriteTime = 0;
+      const WRITE_DEBOUNCE_MS = 3000;
+      const WRITE_THRESHOLD_PCT = 2;
+
       const { pid } = spawnYtDlpDownload(
         outputDir,
         input.url,
@@ -75,6 +98,13 @@ export const downloaderRouter = createTRPCRouter({
         input.quality,
         {
           onProgress: (progress) => {
+            const now = Date.now();
+            if (
+              progress - lastWrittenProgress < WRITE_THRESHOLD_PCT &&
+              now - lastWriteTime < WRITE_DEBOUNCE_MS
+            ) return;
+            lastWrittenProgress = progress;
+            lastWriteTime = now;
             void ctx.db.downloadJob
               .update({ where: { id: job.id }, data: { progress } })
               .catch(() => undefined);

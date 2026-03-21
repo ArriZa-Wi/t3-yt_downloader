@@ -67,19 +67,24 @@ export function spawnYtDlpDownload(
 
   let stderrBuf = "";
   let outputPath = "";
+  let lineBuffer = "";
 
   child.stdout.on("data", (chunk: Buffer) => {
-    const line = chunk.toString();
+    lineBuffer += chunk.toString();
+    const lines = lineBuffer.split("\n");
+    lineBuffer = lines.pop() ?? "";
 
-    const match = PROGRESS_RE.exec(line);
-    if (match?.[1]) {
-      callbacks.onProgress(Math.floor(parseFloat(match[1])));
-    }
+    for (const line of lines) {
+      const match = PROGRESS_RE.exec(line);
+      if (match?.[1]) {
+        callbacks.onProgress(Math.floor(parseFloat(match[1])));
+      }
 
-    // yt-dlp prints "[ExtractAudio] Destination: <path>" or "[download] Destination: <path>"
-    const destMatch = /Destination:\s+(.+)$/.exec(line.trim());
-    if (destMatch?.[1]) {
-      outputPath = destMatch[1].trim();
+      // yt-dlp prints "[ExtractAudio] Destination: <path>" or "[download] Destination: <path>"
+      const destMatch = /Destination:\s+(.+)$/.exec(line.trim());
+      if (destMatch?.[1]) {
+        outputPath = destMatch[1].trim();
+      }
     }
   });
 
