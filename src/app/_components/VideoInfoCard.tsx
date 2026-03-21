@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 
 interface VideoInfoCardProps {
@@ -18,6 +19,8 @@ function formatDuration(seconds: number): string {
 }
 
 export function VideoInfoCard({ title, channel, durationSeconds, thumbnailUrl }: VideoInfoCardProps) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   return (
     <div className="flex gap-4 rounded-lg bg-secondary p-3">
       {thumbnailUrl && (
@@ -26,8 +29,9 @@ export function VideoInfoCard({ title, channel, durationSeconds, thumbnailUrl }:
             src={thumbnailUrl}
             alt={title}
             fill
-            className="object-cover"
+            className={`object-cover transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
             unoptimized
+            onLoad={() => setImgLoaded(true)}
           />
         </div>
       )}

@@ -24,7 +24,7 @@ export function UrlInput({ onFetch, isLoading }: UrlInputProps) {
         placeholder="https://youtube.com/watch?v=..."
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        className="bg-secondary border-border text-foreground placeholder:text-muted-foreground flex-1"
+        className="bg-secondary border-border text-foreground placeholder:text-muted-foreground flex-1 transition-shadow duration-200 focus:animate-input-glow focus:ring-1 focus:ring-primary/60 focus:outline-none"
         disabled={isLoading}
       />
       <Button

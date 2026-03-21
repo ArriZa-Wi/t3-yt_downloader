@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -24,6 +25,18 @@ interface VideoInfo {
   durationSeconds: number;
   thumbnailUrl: string;
 }
+
+const sectionVariants = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
+  exit:    { opacity: 0, y: -10, transition: { duration: 0.2, ease: "easeIn" as const } },
+};
+
+const errorVariants = {
+  initial: { opacity: 0, x: 20 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.25 } },
+  exit:    { opacity: 0, x: -10, transition: { duration: 0.15 } },
+};
 
 export function DownloaderWidget() {
   const [phase, setPhase] = useState<Phase>("idle");
@@ -102,74 +115,105 @@ export function DownloaderWidget() {
   }
 
   return (
-    <Card className="w-full max-w-2xl border-border bg-card shadow-xl">
-      <CardContent className="space-y-5 p-6">
-        <div>
-          <h2 className="mb-1 text-sm font-medium text-muted-foreground">
-            Paste a YouTube URL
-          </h2>
-          <UrlInput
-            onFetch={handleFetch}
-            isLoading={phase === "fetching_info"}
-          />
-        </div>
-
-        {videoInfo && (
-          <VideoInfoCard
-            title={videoInfo.title}
-            channel={videoInfo.channel}
-            durationSeconds={videoInfo.durationSeconds}
-            thumbnailUrl={videoInfo.thumbnailUrl}
-          />
-        )}
-
-        {(phase === "info_ready" || phase === "downloading" || phase === "done") && (
-          <FormatPicker
-            format={format}
-            quality={quality}
-            onFormatChange={(f) => {
-              setFormat(f);
-              if (phase === "done") { setPhase("info_ready"); setJobId(null); }
-            }}
-            onQualityChange={(q) => {
-              setQuality(q);
-              if (phase === "done") { setPhase("info_ready"); setJobId(null); }
-            }}
-          />
-        )}
-
-        {phase === "info_ready" && (
-          <Button
-            onClick={handleDownload}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-          >
-            Download
-          </Button>
-        )}
-
-        {phase === "downloading" && (
-          <ProgressBar progress={progress} status={status ?? "downloading"} />
-        )}
-
-        {phase === "done" && jobId && (
-          <DoneActions jobId={jobId} onReset={handleReset} />
-        )}
-
-        {phase === "error" && (
-          <div className="flex items-center gap-3">
-            <Badge variant="destructive" className="shrink-0">Error</Badge>
-            <span className="text-sm text-muted-foreground">{errorMsg}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              className="ml-auto border-border text-foreground hover:bg-secondary"
-            >
-              Try again
-            </Button>
+    <motion.div
+      initial={{ opacity: 0, y: 32, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number], delay: 0.1 }}
+      className="w-full max-w-2xl"
+    >
+      <Card className="border-border bg-card shadow-xl">
+        <CardContent className="space-y-5 p-6">
+          <div>
+            <h2 className="mb-1 text-sm font-medium text-muted-foreground">
+              Paste a YouTube URL
+            </h2>
+            <UrlInput
+              onFetch={handleFetch}
+              isLoading={phase === "fetching_info"}
+            />
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          <AnimatePresence mode="wait">
+            {videoInfo && (
+              <motion.div key="video-info" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
+                <VideoInfoCard
+                  title={videoInfo.title}
+                  channel={videoInfo.channel}
+                  durationSeconds={videoInfo.durationSeconds}
+                  thumbnailUrl={videoInfo.thumbnailUrl}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {(phase === "info_ready" || phase === "downloading" || phase === "done") && (
+              <motion.div key="format-picker" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
+                <FormatPicker
+                  format={format}
+                  quality={quality}
+                  onFormatChange={(f) => {
+                    setFormat(f);
+                    if (phase === "done") { setPhase("info_ready"); setJobId(null); }
+                  }}
+                  onQualityChange={(q) => {
+                    setQuality(q);
+                    if (phase === "done") { setPhase("info_ready"); setJobId(null); }
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {phase === "info_ready" && (
+              <motion.div key="dl-btn" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
+                <Button
+                  onClick={handleDownload}
+                  className="animate-btn-pulse w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                >
+                  Download
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {phase === "downloading" && (
+              <motion.div key="progress" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
+                <ProgressBar progress={progress} status={status ?? "downloading"} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {phase === "done" && jobId && (
+              <motion.div key="done" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
+                <DoneActions jobId={jobId} onReset={handleReset} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {phase === "error" && (
+              <motion.div key="error" variants={errorVariants} initial="initial" animate="animate" exit="exit">
+                <div className="animate-shake flex items-center gap-3">
+                  <Badge variant="destructive" className="shrink-0">Error</Badge>
+                  <span className="text-sm text-muted-foreground">{errorMsg}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    className="ml-auto border-border text-foreground hover:bg-secondary"
+                  >
+                    Try again
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
