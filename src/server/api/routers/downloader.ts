@@ -19,7 +19,7 @@ const youtubeUrlSchema = z
 export const downloaderRouter = createTRPCRouter({
   getVideoInfo: publicProcedure
     .input(z.object({ url: youtubeUrlSchema }))
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       try {
         return await execYtDlpInfo(input.url);
       } catch (err) {
