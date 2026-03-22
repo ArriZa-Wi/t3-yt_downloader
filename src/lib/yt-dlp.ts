@@ -19,14 +19,13 @@ export async function execYtDlpInfo(url: string): Promise<VideoInfo> {
     url,
   ]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const data = JSON.parse(stdout) as Record<string, unknown>;
+  const data = JSON.parse(stdout) as Record<string, string | number | null | undefined>;
 
   return {
-    title: String(data.title ?? "Unknown Title"),
-    channel: String(data.channel ?? data.uploader ?? "Unknown Channel"),
+    title:           String(data.title    ?? "Unknown Title"),
+    channel:         String(data.channel  ?? data.uploader ?? "Unknown Channel"),
     durationSeconds: Number(data.duration ?? 0),
-    thumbnailUrl: String(data.thumbnail ?? ""),
+    thumbnailUrl:    String(data.thumbnail ?? ""),
   };
 }
 
