@@ -94,7 +94,15 @@ export function DoneActions({ jobId, onReset }: DoneActionsProps) {
   , []);
 
   function handleSave() {
-    window.open("https://youtu.be/Aq5WXmQQooo?si=HrHg7_DpG0Der6DS", "_blank");
+    const w = 480;
+    const h = 360;
+    const left = (screen.width - w) / 2;
+    const top = (screen.height - h) / 2;
+    window.open(
+      "https://youtu.be/Aq5WXmQQooo?si=HrHg7_DpG0Der6DS",
+      "_blank",
+      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=no,resizable=no`,
+    );
   }
 
   return (

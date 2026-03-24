@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
@@ -8,7 +8,8 @@ import { Badge } from "~/components/ui/badge";
 import { UrlInput } from "./UrlInput";
 import { VideoInfoCard } from "./VideoInfoCard";
 import { FormatPicker } from "./FormatPicker";
-import { ProgressBar, DoneActions } from "./ProgressBar";
+import { DoneActions } from "./ProgressBar";
+import { MouseChallenge } from "./MouseChallenge";
 import { Button } from "~/components/ui/button";
 
 type Phase =
@@ -46,6 +47,7 @@ export function DownloaderWidget() {
   const [quality, setQuality] = useState("best");
   const [jobId, setJobId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [downloadComplete, setDownloadComplete] = useState(false);
 
   const utils = api.useUtils();
 
@@ -81,11 +83,10 @@ export function DownloaderWidget() {
   );
 
   const status = jobStatus.data?.status;
-  const progress = jobStatus.data?.progress ?? 0;
 
   useEffect(() => {
     if (phase === "downloading" && status === "done") {
-      setPhase("done");
+      setDownloadComplete(true);
       void utils.downloader.getJobStatus.invalidate();
     }
     if (phase === "downloading" && status === "error") {
@@ -103,7 +104,13 @@ export function DownloaderWidget() {
   }
 
   function handleDownload() {
-    startDownload.mutate({ url, format, quality: quality as "best" | "1080p" | "720p" | "480p" });
+    startDownload.mutate({
+      url,
+      format,
+      quality: quality as "best" | "1080p" | "720p" | "480p",
+      title: videoInfo?.title,
+      thumbnailUrl: videoInfo?.thumbnailUrl,
+    });
   }
 
   function handleReset() {
@@ -112,15 +119,44 @@ export function DownloaderWidget() {
     setVideoInfo(null);
     setJobId(null);
     setErrorMsg("");
+    setDownloadComplete(false);
   }
 
+  /* ── 3D tilt effect ─────────────────────────────── */
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;   // 0-1
+    const y = (e.clientY - rect.top) / rect.height;    // 0-1
+    setTilt({
+      rotateX: (0.5 - y) * 16,   // ±8 deg
+      rotateY: (x - 0.5) * 16,   // ±8 deg
+    });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setTilt({ rotateX: 0, rotateY: 0 });
+  }, []);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 32, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number], delay: 0.1 }}
-      className="w-full max-w-2xl"
-    >
+    <div className="w-full max-w-2xl" style={{ perspective: "800px" }}>
+      <motion.div
+        ref={cardRef}
+        initial={{ opacity: 0, y: 32, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number], delay: 0.1 }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          transform: `rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg)`,
+          transition: "transform 0.15s ease-out",
+          transformStyle: "preserve-3d",
+        }}
+      >
       <Card className="border-border bg-card shadow-xl">
         <CardContent className="space-y-5 p-6">
           <div>
@@ -180,8 +216,11 @@ export function DownloaderWidget() {
 
           <AnimatePresence mode="wait">
             {phase === "downloading" && (
-              <motion.div key="progress" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
-                <ProgressBar progress={progress} status={status ?? "downloading"} />
+              <motion.div key="mouse-challenge" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
+                <MouseChallenge
+                  downloadComplete={downloadComplete}
+                  onComplete={() => setPhase("done")}
+                />
               </motion.div>
             )}
           </AnimatePresence>
@@ -215,5 +254,6 @@ export function DownloaderWidget() {
         </CardContent>
       </Card>
     </motion.div>
+    </div>
   );
 }

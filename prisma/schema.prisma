@@ -72,6 +72,8 @@ model DownloadJob {
     url          String
     format       String
     quality      String?
+    title        String?
+    thumbnailUrl String?
     status       String   @default("queued") // queued | downloading | converting | done | error | cancelled
     progress     Int      @default(0)
     outputPath   String?

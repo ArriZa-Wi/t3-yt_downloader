@@ -1,4 +1,5 @@
 import fs from "fs";
+import { readFile } from "fs/promises";
 import path from "path";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
@@ -29,14 +30,13 @@ export async function GET(
   const filename = path.basename(job.outputPath);
   const contentType =
     job.format === "mp3" ? "audio/mpeg" : "video/mp4";
-  const stat = fs.statSync(job.outputPath);
-  const fileStream = fs.createReadStream(job.outputPath);
+  const buffer = await readFile(job.outputPath);
 
-  return new NextResponse(fileStream as unknown as ReadableStream, {
+  return new NextResponse(buffer, {
     headers: {
       "Content-Type": contentType,
       "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
-      "Content-Length": String(stat.size),
+      "Content-Length": String(buffer.byteLength),
     },
   });
 }

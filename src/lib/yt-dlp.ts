@@ -1,4 +1,6 @@
 import { execFile, spawn } from "child_process";
+import fs from "fs";
+import path from "path";
 import { promisify } from "util";
 import { env } from "~/env";
 
@@ -101,6 +103,20 @@ export function spawnYtDlpDownload(
 
   child.on("close", (code) => {
     if (code === 0) {
+      // Fallback: if we didn't capture the output path, scan the directory
+      if (!outputPath || !fs.existsSync(outputPath)) {
+        const ext = format === "mp3" ? ".mp3" : ".mp4";
+        try {
+          const files = fs.readdirSync(outputDir)
+            .filter((f) => f.endsWith(ext))
+            .map((f) => {
+              const full = path.join(outputDir, f);
+              return { path: full, mtime: fs.statSync(full).mtimeMs };
+            })
+            .sort((a, b) => b.mtime - a.mtime);
+          if (files[0]) outputPath = files[0].path;
+        } catch { /* ignore scan errors */ }
+      }
       callbacks.onDone(outputPath);
     } else {
       callbacks.onError(stderrBuf || `yt-dlp exited with code ${String(code)}`);

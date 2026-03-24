@@ -1,7 +1,9 @@
-import { Navbar }            from "./_components/Navbar";
-import { DownloaderWidget }  from "./_components/DownloaderWidget";
-import { FloatingParticles } from "./_components/FloatingParticles";
-import { BelowCardContent }  from "./_components/BelowCardContent";
+import { Navbar }              from "./_components/Navbar";
+import { DownloaderWidget }    from "./_components/DownloaderWidget";
+import { DownloadHistory }     from "./_components/DownloadHistory";
+import { InteractiveParticles } from "./_components/InteractiveParticles";
+import { TypedHeading }        from "./_components/TypedHeading";
+import { BelowCardContent }    from "./_components/BelowCardContent";
 
 export default function HomePage() {
   return (
@@ -18,11 +20,13 @@ export default function HomePage() {
           animation: "bg-pulse 8s ease-in-out infinite",
         }}
       />
-      {/* Floating particles */}
-      <FloatingParticles />
+      {/* Interactive particle network */}
+      <InteractiveParticles />
       <Navbar />
       <main className="relative z-10 flex flex-1 flex-col items-center gap-16 px-4 pb-24 pt-16">
+        <TypedHeading />
         <DownloaderWidget />
+        <DownloadHistory />
         <BelowCardContent />
       </main>
     </div>

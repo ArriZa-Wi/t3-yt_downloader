@@ -4,7 +4,7 @@ import fs from "fs";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { execYtDlpInfo, spawnYtDlpDownload, type VideoInfo } from "~/lib/yt-dlp";
 
 interface CacheEntry { data: VideoInfo; cachedAt: number; }
@@ -60,6 +60,8 @@ export const downloaderRouter = createTRPCRouter({
           .enum(["best", "1080p", "720p", "480p"])
           .optional()
           .default("best"),
+        title: z.string().optional(),
+        thumbnailUrl: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -69,7 +71,10 @@ export const downloaderRouter = createTRPCRouter({
           url: input.url,
           format: input.format,
           quality: input.quality,
+          title: input.title,
+          thumbnailUrl: input.thumbnailUrl,
           status: "queued",
+          createdById: ctx.session?.user?.id,
         },
       });
 
@@ -158,4 +163,22 @@ export const downloaderRouter = createTRPCRouter({
 
       return job;
     }),
+
+  getHistory: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.db.downloadJob.findMany({
+      where: { createdById: ctx.session.user.id },
+      select: {
+        id: true,
+        title: true,
+        thumbnailUrl: true,
+        url: true,
+        format: true,
+        quality: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+  }),
 });
