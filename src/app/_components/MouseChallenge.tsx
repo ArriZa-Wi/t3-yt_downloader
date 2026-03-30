@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 
-const GAIN = 0.006;         // progress gained per px of mouse movement
-const DECAY_PER_SEC = 18;   // % lost per second when idle
+const GAIN = 3.5;           // progress gained per tap
+const DECAY_PER_SEC = 12;   // % lost per second when idle
 const FRAME_MS = 16;        // ~60fps
 
 interface MouseChallengeProps {
@@ -15,33 +15,31 @@ interface MouseChallengeProps {
 export function MouseChallenge({ downloadComplete, onComplete }: MouseChallengeProps) {
   const [progress, setProgress] = useState(0);
   const [filled, setFilled] = useState(false);
-  const mousePos = useRef({ x: 0, y: 0 });
-  const lastPos = useRef({ x: 0, y: 0 });
   const progressRef = useRef(0);
   const filledRef = useRef(false);
+  const pendingTaps = useRef(0);
 
-  // Track mouse position
-  const onMouseMove = useCallback((e: MouseEvent) => {
-    mousePos.current = { x: e.clientX, y: e.clientY };
+  // Accumulate taps (works for both click and touch)
+  const handleTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (filledRef.current) return;
+    e.preventDefault();
+    pendingTaps.current += 1;
   }, []);
 
-  useEffect(() => {
-    window.addEventListener("mousemove", onMouseMove);
-    return () => window.removeEventListener("mousemove", onMouseMove);
-  }, [onMouseMove]);
-
-  // Animation loop: accumulate movement, apply decay
+  // Animation loop: apply taps, apply decay
   useEffect(() => {
     const interval = setInterval(() => {
       if (filledRef.current) return;
 
-      const dx = mousePos.current.x - lastPos.current.x;
-      const dy = mousePos.current.y - lastPos.current.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      lastPos.current = { ...mousePos.current };
-
       let next = progressRef.current;
-      next += dist * GAIN;
+
+      // Apply accumulated taps
+      if (pendingTaps.current > 0) {
+        next += pendingTaps.current * GAIN;
+        pendingTaps.current = 0;
+      }
+
+      // Decay
       next -= DECAY_PER_SEC * (FRAME_MS / 1000);
       next = Math.max(0, Math.min(100, next));
 
@@ -72,7 +70,13 @@ export function MouseChallenge({ downloadComplete, onComplete }: MouseChallengeP
         : "bg-green-500";
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div
+      className="flex cursor-pointer flex-col items-center gap-4 select-none"
+      onClick={handleTap}
+      onTouchStart={handleTap}
+      role="button"
+      tabIndex={0}
+    >
       {!filled ? (
         <>
           <motion.p
@@ -80,10 +84,10 @@ export function MouseChallenge({ downloadComplete, onComplete }: MouseChallengeP
             animate={{ opacity: 1, scale: 1 }}
             className="text-center text-lg font-bold text-foreground"
           >
-            Shake your mouse as fast as you can!
+            Tap as fast as you can!
           </motion.p>
           <p className="text-xs text-muted-foreground">
-            Move your mouse to fill the bar — don&apos;t stop or it drains!
+            Click or tap to fill the bar &mdash; don&apos;t stop or it drains!
           </p>
         </>
       ) : (
@@ -99,7 +103,7 @@ export function MouseChallenge({ downloadComplete, onComplete }: MouseChallengeP
       {/* Progress bar */}
       <div className="h-4 w-full overflow-hidden rounded-full bg-secondary">
         <div
-          className={`h-full rounded-full ${barColor}`}
+          className={`h-full rounded-full transition-all duration-75 ${barColor}`}
           style={{ width: `${progress}%` }}
         />
       </div>

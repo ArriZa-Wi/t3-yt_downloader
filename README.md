@@ -119,6 +119,88 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## Exposing with Cloudflare Tunnel
+
+To make your local dev server accessible over the internet (e.g., for testing on other devices or sharing a demo), you can use `cloudflared` to create a quick tunnel.
+
+### Install cloudflared
+
+```bash
+# Windows (via winget)
+winget install Cloudflare.cloudflared
+
+# macOS (via Homebrew)
+brew install cloudflared
+
+# Linux (Debian/Ubuntu)
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo dpkg -i cloudflared.deb
+```
+
+Verify it's installed:
+```bash
+cloudflared --version
+```
+
+### Quick tunnel (no Cloudflare account needed)
+
+This creates a temporary public URL that proxies to your local dev server:
+
+```bash
+# Make sure your dev server is running first
+npm run dev
+
+# In a second terminal, start the tunnel
+cloudflared tunnel --url http://localhost:3000
+```
+
+`cloudflared` will output a public URL like `https://random-words.trycloudflare.com`. Anyone with the link can access your app while the tunnel is running. The URL changes each time you restart the tunnel.
+
+### Named tunnel (requires Cloudflare account)
+
+For a persistent subdomain on your own domain:
+
+**1. Authenticate**
+```bash
+cloudflared tunnel login
+```
+This opens a browser to authorize `cloudflared` with your Cloudflare account.
+
+**2. Create a named tunnel**
+```bash
+cloudflared tunnel create ytsave
+```
+This generates a tunnel ID and a credentials file at `~/.cloudflared/<tunnel-id>.json`.
+
+**3. Configure the tunnel**
+
+Create `~/.cloudflared/config.yml`:
+```yaml
+tunnel: <tunnel-id>
+credentials-file: /path/to/.cloudflared/<tunnel-id>.json
+
+ingress:
+  - hostname: ytsave.yourdomain.com
+    service: http://localhost:3000
+  - service: http_status:404
+```
+
+**4. Add a DNS record**
+```bash
+cloudflared tunnel route dns ytsave ytsave.yourdomain.com
+```
+
+**5. Run the tunnel**
+```bash
+cloudflared tunnel run ytsave
+```
+
+Your app is now available at `https://ytsave.yourdomain.com`.
+
+> **Note:** The quick tunnel is ideal for hackathon demos and quick testing. Use a named tunnel if you need a stable URL.
+
+---
+
 ## Database Management
 
 ```bash

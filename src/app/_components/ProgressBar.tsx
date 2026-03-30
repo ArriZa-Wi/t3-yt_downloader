@@ -93,18 +93,6 @@ export function DoneActions({ jobId, onReset }: DoneActionsProps) {
     }))
   , []);
 
-  function handleSave() {
-    const w = 480;
-    const h = 360;
-    const left = (screen.width - w) / 2;
-    const top = (screen.height - h) / 2;
-    window.open(
-      "https://youtu.be/Aq5WXmQQooo?si=HrHg7_DpG0Der6DS",
-      "_blank",
-      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=no,resizable=no`,
-    );
-  }
-
   return (
     <div className="flex items-center gap-3">
       <span className="relative inline-flex">
@@ -118,7 +106,7 @@ export function DoneActions({ jobId, onReset }: DoneActionsProps) {
         </motion.span>
         <ConfettiBurst particles={particles} />
       </span>
-      <a href={`/api/download/${jobId}`} download onClick={handleSave}>
+      <a href={`/api/download/${jobId}`} download>
         <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
           ⬇ Save file
         </Button>

@@ -19,6 +19,7 @@ export const env = createEnv({
       .default("development"),
     YTDLP_PATH: z.string().default("yt-dlp"),
     FFMPEG_PATH: z.string().default("ffmpeg"),
+    COOKIES_FROM_BROWSER: z.string().default("firefox"),
   },
 
   /**
@@ -42,6 +43,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     YTDLP_PATH: process.env.YTDLP_PATH,
     FFMPEG_PATH: process.env.FFMPEG_PATH,
+    COOKIES_FROM_BROWSER: process.env.COOKIES_FROM_BROWSER,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -26,7 +26,7 @@ const youtubeUrlSchema = z
   .url()
   .refine(
     (url) =>
-      /^https?:\/\/(www\.)?(youtube\.com\/watch|youtu\.be\/)/.test(url),
+      /^https?:\/\/(www\.)?(youtube\.com\/(watch|shorts\/)|youtu\.be\/)/.test(url),
     { message: "Must be a YouTube video URL" },
   );
 

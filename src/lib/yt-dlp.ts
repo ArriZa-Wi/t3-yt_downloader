@@ -6,6 +6,15 @@ import { env } from "~/env";
 
 const execFileAsync = promisify(execFile);
 
+/** Common flags shared by every yt-dlp invocation */
+function baseArgs(): string[] {
+  return [
+    "--cookies-from-browser", env.COOKIES_FROM_BROWSER,
+    "--js-runtimes", "node",
+    "--remote-components", "ejs:github",
+  ];
+}
+
 export interface VideoInfo {
   title: string;
   channel: string;
@@ -15,6 +24,7 @@ export interface VideoInfo {
 
 export async function execYtDlpInfo(url: string): Promise<VideoInfo> {
   const { stdout } = await execFileAsync(env.YTDLP_PATH, [
+    ...baseArgs(),
     "--dump-json",
     "--no-download",
     "--no-playlist",
@@ -46,7 +56,7 @@ export function spawnYtDlpDownload(
   quality: string | undefined,
   callbacks: DownloadCallbacks,
 ): { pid: number | undefined; kill: () => void } {
-  const args: string[] = ["--no-playlist", "--newline", "--progress"];
+  const args: string[] = [...baseArgs(), "--no-playlist", "--newline", "--progress"];
 
   if (format === "mp3") {
     args.push(
